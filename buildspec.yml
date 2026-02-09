@@ -1,0 +1,41 @@
+version: 0.2
+
+env:
+variables:
+ACCOUNT_ID: 146040387664
+AWS_DEFAULT_REGION: us-east-1      
+IMAGE_REPO_NAME: php-todo-app
+
+phases:
+install:
+runtime-versions:
+docker: 20
+
+pre_build:
+commands:
+- echo Getting AWS Account ID...
+- ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+- REPO_URI=$ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME
+
+```
+  - echo Logging in to Amazon ECR...
+  - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REPO_URI
+```
+
+build:
+commands:
+- echo Build started on `date`
+- echo Building Docker image...
+- docker build -t $IMAGE_REPO_NAME .
+- docker tag $IMAGE_REPO_NAME:latest $REPO_URI:latest
+
+post_build:
+commands:
+- echo Build completed on `date`
+- echo Pushing Docker image to ECR...
+- docker push $REPO_URI:latest
+- echo Image successfully pushed to ECR
+
+artifacts:
+files:
+- '**/*'
