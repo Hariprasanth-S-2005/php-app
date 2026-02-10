@@ -8,21 +8,21 @@ env:
 phases:
   pre_build:
     commands:
-      - echo Login to ECR
+      - echo Logging in to Amazon ECR
       - ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
       - REPO_URI=$ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME
-      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REPO_URI
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
       - IMAGE_TAG=latest
 
   build:
     commands:
-      - echo Build image
+      - echo Building Docker image
       - docker build -t $IMAGE_REPO_NAME:$IMAGE_TAG .
       - docker tag $IMAGE_REPO_NAME:$IMAGE_TAG $REPO_URI:$IMAGE_TAG
 
   post_build:
     commands:
-      - echo Push image
+      - echo Pushing Docker image
       - docker push $REPO_URI:$IMAGE_TAG
       - printf '[{"name":"php-container","imageUri":"%s"}]' $REPO_URI:$IMAGE_TAG > imagedefinitions.json
 
